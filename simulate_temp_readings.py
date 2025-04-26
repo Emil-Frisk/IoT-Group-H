@@ -14,15 +14,16 @@ import json
 # CONNECTION_STRING = os.getenv("IOTHUB_DEVICE_CONNECTION_STRING")
 
 
+
 def store_blob(blob_info, file_name, app_logger):
     try:
-        sas_url = f"https://{blob_info['hostName']}/{blob_info['containerName']}/{blob_info['blobName']}/?{blob_info['sasToken']}"
+        sas_url = f"https://{blob_info['hostName']}/{blob_info['containerName']}/{blob_info['blobName']}{blob_info['sasToken']}"
         with open(file_name, "rb") as data:
             blob_client = BlobClient.from_blob_url(sas_url)
-            blob_client.upload_blob(data, overwrite=True)
+            blob_client.upload_blob(data)
         return True
     except Exception as ex:
-        app_logger.info(f"Unexpected error while trying to store blob")
+        app_logger.info(f"Unexpected error while trying to store blob: {ex}")
         return False
 
 # def notify_blob_upload_status(device_client, correlation_id, is_success, app_logger):
@@ -34,19 +35,15 @@ def store_blob(blob_info, file_name, app_logger):
 #     except Exception as ex:
 #         app_logger.info(f"Unexpected error while notifying blob upload status: {ex}")
 
-def upload_file(network_outage, app_logger):
+def upload_file(network_outage, app_logger, client):
     try:
         file_name = f"{network_outage['time_stamp']}.json"
-        device_client = IoTHubDeviceClient.create_from_connection_string(CONNECTION_STRING)
-        device_client.connect()
-        app_logger.info("Connected to IoT Hub")
-        
-        storage_info = device_client.get_storage_info_for_blob(file_name)
+        storage_info = client.get_storage_info_for_blob(file_name)
         
         success = store_blob(storage_info, file_name, app_logger)
         
-        device_client.disconnect()
-        app_logger.info("Disconnect from IoT Hub")
+        # notify_blob_upload_status(client, storage_info['correlationId'], success, app_logger)
+        
     except Exception as ex:
         app_logger.info("Unexpected error file uploading file: {ex}")
 
@@ -145,23 +142,32 @@ def main():
 
             try: # Send the message
                 temp_logger.info(f"Temperature {temperature} Humidity {humidity}")
-                client.send_message(message)
-                
-                ### check if there has been a network issue 
-                ### if so send the missing aggregate data to the iot-hub
-                if not network_outage["is_connected"]:
-                    ### send file to iothub and delete it
-                    file_path = f"{network_outage['time_stamp']}.json"
-                    if os.path.exists(file_path):
-                        upload_file(network_outage, app_logger)
-                        os.remove(file_path)                       
-                        app_logger.info("Network outage file has been removed")
+                if is_network_available():
+                    client = ensure_client_connection(client, app_logger)
+                    if client:
+                        client.send_message(message)
+                        
+                        ### check if there has been a network issue 
+                        ### if so send the missing aggregate data to the iot-hub
+                        if not network_outage["is_connected"]:
+                            ### send file to iothub and delete it
+                            file_path = f"{network_outage['time_stamp']}.json"
+                            if os.path.exists(file_path):
+                                upload_file(network_outage, app_logger, client)
+                                os.remove(file_path)                       
+                                app_logger.info("Network outage file has been removed")
+                            else:
+                                app_logger.info("Data has been lost... network outage json file not found")
+                        
+                        
+                        network_outage["is_connected"] = True
+                        time.sleep(time_interval)
                     else:
-                        app_logger.info("Data has been lost... network outage json file not found")
-                
-                
-                network_outage["is_connected"] = True
-                time.sleep(time_interval)
+                        client.disconnect()
+                        raise ConnectionError("Failed to reconnect to IoT Hub")    
+                else:
+                    client.disconnect()
+                    raise ConnectionError("Network unavailable")
             except (ConnectionError, 
                 OSError, 
                 socket.gaierror, 
@@ -204,6 +210,25 @@ def main():
     finally:
         app_logger.info("App stopped")
         client.shutdown()
+
+def is_network_available():
+    try:
+        socket.create_connection(("8.8.8.8", 53), timeout=3)
+        return True
+    except OSError:
+        return False
+
+def ensure_client_connection(client, app_logger):
+    try:
+        if not client.connected:
+            client.shutdown()
+            client = IoTHubDeviceClient.create_from_connection_string(CONNECTION_STRING)
+            client.connect()
+            app_logger.info("Reconnected to IoT Hub")
+        return client
+    except Exception as e:
+        app_logger.error(f"Failed to reconnect to IoT Hub:  {e}")
+        return None
 
 def append_network_error_msg(time_stamp, data, app_logger):
     with open(f"{time_stamp}.json", "w") as file:
