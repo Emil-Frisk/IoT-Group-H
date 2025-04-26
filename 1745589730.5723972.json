@@ -1,0 +1,9 @@
+{
+    "messages": [
+        "{'temperature': 37.61, 'humidity': 29.62, 'timestamp': 1745589730.5723972, 'device_id': 'device1'}",
+        "{'temperature': 27.68, 'humidity': 22.76, 'timestamp': 1745589735.5251594, 'device_id': 'device1'}",
+        "{'temperature': 33.83, 'humidity': 22.81, 'timestamp': 1745589739.493962, 'device_id': 'device1'}",
+        "{'temperature': 21.85, 'humidity': 39.53, 'timestamp': 1745589743.203198, 'device_id': 'device1'}",
+        "{'temperature': 35.33, 'humidity': 28.77, 'timestamp': 1745589746.7054985, 'device_id': 'device1'}"
+    ]
+}

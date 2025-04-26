@@ -31,8 +31,11 @@ RUN ln -s /usr/bin/python3 /usr/bin/python && \
     ln -s /usr/bin/pip3 /usr/bin/pip
 
 # Install azure-iot-device and verify installation
-RUN pip install azure-iot-device && \
+RUN pip install azure-iot-device azure-storage-blob && \
+    python -c "from azure.iot.device import IoTHubDeviceClient; print('Azure IoT Device package successfully installed')" && \
     python -c "from azure.iot.device import IoTHubDeviceClient; print('Azure IoT Device package successfully installed')"
+
+### TOdo vaiha tää myöhemmin testaamaan azure sotrage blob
 
 # Verify all installations
 RUN python --version && \
