@@ -11,9 +11,7 @@ from azure.storage.blob import BlobClient
 import socket
 import json
 
-# CONNECTION_STRING = os.getenv("IOTHUB_DEVICE_CONNECTION_STRING")
-
-
+CONNECTION_STRING = os.getenv("IOTHUB_DEVICE_CONNECTION_STRING")
 
 def store_blob(blob_info, file_name, app_logger):
     try:
@@ -26,23 +24,12 @@ def store_blob(blob_info, file_name, app_logger):
         app_logger.info(f"Unexpected error while trying to store blob: {ex}")
         return False
 
-# def notify_blob_upload_status(device_client, correlation_id, is_success, app_logger):
-#     try:
-#         status_code = 0 if is_success else -1
-#         status_desc = "Success" if is_success else "Failure"
-#         device_client.notify_blob_upload_status(correlation_id, is_success, status_code, status_desc)
-#         app_logger.info(f"Notifed IoT hub of upload status")
-#     except Exception as ex:
-#         app_logger.info(f"Unexpected error while notifying blob upload status: {ex}")
-
 def upload_file(network_outage, app_logger, client):
     try:
         file_name = f"{network_outage['time_stamp']}.json"
         storage_info = client.get_storage_info_for_blob(file_name)
         
         success = store_blob(storage_info, file_name, app_logger)
-        
-        # notify_blob_upload_status(client, storage_info['correlationId'], success, app_logger)
         
     except Exception as ex:
         app_logger.info("Unexpected error file uploading file: {ex}")
