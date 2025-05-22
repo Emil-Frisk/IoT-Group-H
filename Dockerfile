@@ -4,8 +4,7 @@ FROM ubuntu:20.04
 # Avoid timezone prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Set the environment variable
-ENV IOTHUB_DEVICE_CONNECTION_STRING="HostName=H-ryhma-IoT-hub.azure-devices.net;DeviceId=device2;SharedAccessKey=RA7N4plT80RbehmWJlbZCrH/BySY+o5HIVmsMPadbH0="
+# Set the environment variabl
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
