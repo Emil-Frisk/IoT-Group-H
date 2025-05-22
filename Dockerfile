@@ -5,6 +5,7 @@ FROM ubuntu:20.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Set the environment variable
+ENV IOTHUB_DEVICE_CONNECTION_STRING="HostName=H-ryhma-IoT-hub.azure-devices.net;DeviceId=device2;SharedAccessKey=RA7N4plT80RbehmWJlbZCrH/BySY+o5HIVmsMPadbH0="
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -32,11 +33,11 @@ RUN curl https://bootstrap.pypa.io/pip/3.8/get-pip.py -o get-pip.py && \
 RUN ln -s /usr/bin/python3 /usr/bin/python && \
     ln -s /usr/bin/pip3 /usr/bin/pip
 
+# Upgrade pip
+RUN pip install --upgrade pip==23.0
+
 # Install azure-iot-device and azure-storage-blob
-RUN pip install azure-iot-device azure-storage-blob && \
-    python -c "from azure.iot.device import IoTHubDeviceClient; print('Azure IoT Device package successfully installed')" && \
-    python -c "from azure.storage.blob import BlobClient; print('Azure storage blob package successfully installed')"
-    
+RUN pip install azure-iot-device azure-storage-blob
 
 # Verify all installations
 RUN python --version && \
