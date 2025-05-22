@@ -4,6 +4,8 @@ FROM ubuntu:20.04
 # Avoid timezone prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
+# Set the environment variable
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     wget \
@@ -21,8 +23,8 @@ RUN add-apt-repository ppa:deadsnakes/ppa && \
 # Make Python 3.8 the default python3
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 1
 
-# Install pip 20.0.2
-RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+# Install pip 20.0.2 for Python 3.8
+RUN curl https://bootstrap.pypa.io/pip/3.8/get-pip.py -o get-pip.py && \
     python3 get-pip.py 'pip==20.0.2' && \
     rm get-pip.py
 
@@ -30,12 +32,11 @@ RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
 RUN ln -s /usr/bin/python3 /usr/bin/python && \
     ln -s /usr/bin/pip3 /usr/bin/pip
 
-# Install azure-iot-device and verify installation
+# Install azure-iot-device and azure-storage-blob
 RUN pip install azure-iot-device azure-storage-blob && \
     python -c "from azure.iot.device import IoTHubDeviceClient; print('Azure IoT Device package successfully installed')" && \
-    python -c "from azure.iot.device import IoTHubDeviceClient; print('Azure IoT Device package successfully installed')"
-
-### TOdo vaiha tää myöhemmin testaamaan azure sotrage blob
+    python -c "from azure.storage.blob import BlobClient; print('Azure storage blob package successfully installed')"
+    
 
 # Verify all installations
 RUN python --version && \
@@ -45,6 +46,8 @@ RUN python --version && \
 # Set working directory
 WORKDIR /app
 
+# Copy application script
 COPY simulate_temp_readings.py .
 
+# Keep container running
 CMD ["tail", "-f", "/dev/null"]
